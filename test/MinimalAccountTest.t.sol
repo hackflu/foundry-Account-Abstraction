@@ -22,9 +22,8 @@ contract MinimalAccounTest is Test {
     MinimalAccount minimalAccount;
     ERC20Mock usdc;
     SendPackedUserOps sendPackedUserOps;
-
     uint256 constant AMOUNT_TO_MINT = 1e18;
-    address randomUser = makeAddr("randomUser");
+    address randomUser = makeAddr("bundler");
 
     function setUp() public {
         DeployScript deployScript = new DeployScript();
@@ -98,7 +97,8 @@ contract MinimalAccounTest is Test {
         PackedUserOperation memory packedUserOp = sendPackedUserOps
             .generatedSignedUserOperation(
                 wrapperInCallData,
-                helperConfig.getConfig()
+                helperConfig.getConfig(),
+                address(minimalAccount)
             );
         // Act
         bytes32 userOperationHash = IEntryPoint(
@@ -131,12 +131,13 @@ contract MinimalAccounTest is Test {
         PackedUserOperation memory packedUserOperation = sendPackedUserOps
             .generatedSignedUserOperation(
                 wrapperInCallData,
-                helperConfig.getConfig()
+                helperConfig.getConfig(),
+                address(minimalAccount)
             );
         bytes32 userOpHash = IEntryPoint(helperConfig.getConfig().entryPoint)
             .getUserOpHash(packedUserOperation);
-        uint256 missingAccountFunds = 0;
-        vm.prank(minimalAccount.owner());
+        uint256 missingAccountFunds = 1e18;
+        vm.prank(helperConfig.getConfig().entryPoint);
         uint256 validatedData = minimalAccount.validateUserOp(
             packedUserOperation,
             userOpHash,
@@ -144,5 +145,48 @@ contract MinimalAccounTest is Test {
         );
 
         console.log("The data : ", validatedData);
+        assertEq(validatedData, 0);
+    }
+
+    function testPointCanExecuteCommands() public {
+        //Arrange
+        address dest = address(usdc);
+        uint256 value = 0;
+        bytes memory functionData = abi.encodeWithSelector(
+            ERC20Mock.mint.selector,
+            address(minimalAccount),
+            AMOUNT_TO_MINT
+        );
+        bytes memory wrapperInCallData = abi.encodeWithSelector(
+            MinimalAccount.execute.selector,
+            dest,
+            value,
+            functionData
+        );
+        PackedUserOperation memory packedUserOperation = sendPackedUserOps
+            .generatedSignedUserOperation(
+                wrapperInCallData,
+                helperConfig.getConfig(),
+                address(minimalAccount)
+            );
+
+        vm.deal(address(minimalAccount), 100 ether);
+        PackedUserOperation[] memory ops = new PackedUserOperation[](1);
+        ops[0] = packedUserOperation;
+
+        vm.warp(block.timestamp + 1);
+        vm.roll(block.number + 1);
+        // Act
+        address entryPoint = helperConfig.getConfig().entryPoint;
+        // Assert
+        console.log("tx  origin : ", tx.origin);
+        console.log("length : ",address(0x123).code.length);
+        vm.prank(randomUser,randomUser);
+        IEntryPoint(entryPoint).handleOps(
+            ops,
+            payable(randomUser)
+        );
+
+        assertEq(usdc.balanceOf(address(minimalAccount)), AMOUNT_TO_MINT);
     }
 }

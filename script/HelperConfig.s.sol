@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
-import {Script,console} from "forge-std/Script.sol";
+import {Script, console} from "forge-std/Script.sol";
 import {EntryPoint} from "@account-abstraction/contracts/core/EntryPoint.sol";
 
 contract HelperConfig is Script {
@@ -29,9 +29,7 @@ contract HelperConfig is Script {
         return getConfigByChainId(block.chainid);
     }
 
-    function getConfigByChainId(
-        uint256 chainId
-    ) public  returns (NetworkConfig memory) {
+    function getConfigByChainId(uint256 chainId) public returns (NetworkConfig memory) {
         if (chainId == ANVIL_CHAIN_ID) {
             return _getOrCreateAnvilEthConfig();
         }
@@ -41,31 +39,15 @@ contract HelperConfig is Script {
         revert HelperConfig__InvalidChainId();
     }
 
-    function _getSepoliaNetworkConfig()
-        internal
-        pure
-        returns (NetworkConfig memory)
-    {
-        return
-            NetworkConfig({
-                entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789,
-                account: BURNER_WALLET
-            });
+    function _getSepoliaNetworkConfig() internal pure returns (NetworkConfig memory) {
+        return NetworkConfig({entryPoint: 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789, account: BURNER_WALLET});
     }
 
-    function _getZkSyncSeploiaConfig()
-        internal
-        pure
-        returns (NetworkConfig memory)
-    {
+    function _getZkSyncSeploiaConfig() internal pure returns (NetworkConfig memory) {
         return NetworkConfig({entryPoint: address(0), account: BURNER_WALLET});
     }
 
-    function _getOrCreateAnvilEthConfig()
-        public
-
-        returns (NetworkConfig memory)
-    {
+    function _getOrCreateAnvilEthConfig() public returns (NetworkConfig memory) {
         if (config.account != address(0)) {
             return config;
         }
@@ -74,10 +56,7 @@ contract HelperConfig is Script {
         EntryPoint entryPoint = new EntryPoint();
         vm.stopBroadcast();
         // deploy mock entry point for the anvil chain
-        config = NetworkConfig({
-            entryPoint : address(entryPoint),
-            account : ANVIL_DEFAULT_KEY
-        });
+        config = NetworkConfig({entryPoint: address(entryPoint), account: ANVIL_DEFAULT_KEY});
         return config;
     }
 }

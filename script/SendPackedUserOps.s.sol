@@ -2,15 +2,9 @@
 pragma solidity ^0.8.19;
 import {Script} from "forge-std/Script.sol";
 import {HelperConfig} from "../script/HelperConfig.s.sol";
-import {
-    PackedUserOperation
-} from "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
-import {
-    IEntryPoint
-} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
-import {
-    MessageHashUtils
-} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {PackedUserOperation} from "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
+import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract SendPackedUserOps is Script {
     using MessageHashUtils for bytes32;
@@ -23,15 +17,9 @@ contract SendPackedUserOps is Script {
     ) public returns (PackedUserOperation memory) {
         // 1 generate the unsigned data
         uint256 nonce = IEntryPoint(config.entryPoint).getNonce(minimalAccount, 0);
-        PackedUserOperation memory userOp = _generateUnsignedUserOperation(
-            callData,
-            minimalAccount,
-            nonce
-        );
+        PackedUserOperation memory userOp = _generateUnsignedUserOperation(callData, minimalAccount, nonce);
         // get user ophash
-        bytes32 userOpHash = IEntryPoint(config.entryPoint).getUserOpHash(
-            userOp
-        );
+        bytes32 userOpHash = IEntryPoint(config.entryPoint).getUserOpHash(userOp);
         bytes32 digest = userOpHash.toEthSignedMessageHash();
         // 2 .signed and return it
         /**
@@ -50,30 +38,25 @@ contract SendPackedUserOps is Script {
         return userOp;
     }
 
-    function _generateUnsignedUserOperation(
-        bytes memory callData,
-        address sender,
-        uint256 nonce
-    ) internal view returns (PackedUserOperation memory) {
+    function _generateUnsignedUserOperation(bytes memory callData, address sender, uint256 nonce)
+        internal
+        view
+        returns (PackedUserOperation memory)
+    {
         uint128 verificationGasLimit = 100000; // 100k gas
         uint128 callGasLimit = 200000; // 200k gas
         uint128 maxPriorityFeePerGas = 1e9; // 1 gwei
         uint128 maxFeePerGas = 10e9; // 10 gwei
-        return
-            PackedUserOperation({
-                sender: sender,
-                nonce: nonce,
-                initCode: hex"",
-                callData: callData,
-                accountGasLimits: bytes32(
-                    (uint256(verificationGasLimit) << 128) | uint256(callGasLimit)
-                ),
-                preVerificationGas: 50000,
-                gasFees: bytes32(
-                    (uint256(maxPriorityFeePerGas) << 128) | uint256(maxFeePerGas)
-                ),
-                paymasterAndData: hex"",
-                signature: hex""
-            });
+        return PackedUserOperation({
+            sender: sender,
+            nonce: nonce,
+            initCode: hex"",
+            callData: callData,
+            accountGasLimits: bytes32((uint256(verificationGasLimit) << 128) | uint256(callGasLimit)),
+            preVerificationGas: 50000,
+            gasFees: bytes32((uint256(maxPriorityFeePerGas) << 128) | uint256(maxFeePerGas)),
+            paymasterAndData: hex"",
+            signature: hex""
+        });
     }
 }

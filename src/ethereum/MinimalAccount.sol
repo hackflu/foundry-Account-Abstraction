@@ -18,7 +18,7 @@ import {
 import {
     IEntryPoint
 } from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
-
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract MinimalAccount is IAccount, Ownable {
     error MinimalAccount__NotFromEntryPoint();
     error MinimalAccount__NotFromEntryPointOrOwner();

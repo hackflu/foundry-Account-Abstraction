@@ -24,6 +24,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Utils} from "@foundry-era-contracts/contracts/libraries/Utils.sol";
 
+
 contract ZkMinimalAccount is IAccount, Ownable {
     using MemoryTransactionHelper for Transaction;
     ////////////////////////
@@ -93,7 +94,7 @@ contract ZkMinimalAccount is IAccount, Ownable {
         if (magic != ACCOUNT_VALIDATION_SUCCESS_MAGIC) {
             revert ZkMinimalAccount__InvalidSignature();
         }
-         _executeTransaction(_transaction);
+        _executeTransaction(_transaction);
     }
 
     function payForTransaction(
@@ -129,7 +130,10 @@ contract ZkMinimalAccount is IAccount, Ownable {
             uint32(gasleft()),
             address(NONCE_HOLDER_SYSTEM_CONTRACT),
             0,
-            abi.encodeCall(INonceHolder.increaseMinNonce, (_transaction.nonce))
+            abi.encodeCall(
+                INonceHolder.incrementMinNonceIfEquals,
+                (_transaction.nonce)
+            )
         );
 
         // check for fee to pay
@@ -149,9 +153,7 @@ contract ZkMinimalAccount is IAccount, Ownable {
         return magic;
     }
 
-    function _executeTransaction(
-        Transaction memory _transaction
-    ) internal  {
+    function _executeTransaction(Transaction memory _transaction) internal {
         address to = address(uint160(_transaction.to));
         uint128 value = Utils.safeCastToU128(_transaction.value);
         bytes memory data = _transaction.data;
